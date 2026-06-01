@@ -3,14 +3,14 @@
 Need to not overthink this. First get the boring basic version working, then fix the nice stuff after.
 Writing on the train so I might miss something will refine stuff when home
 
-## setup first
+## setup first 
 
-- go into `KK2/`
-- run `uv sync`
-- check nothing weird happens with the deps
-- `.env` should NOT go to git
-- keep `.env.example` because that one is ok
-- check gitignore ignores the example assignment + extra rules stuff
+- go into `KK2/` - done
+- run `uv sync` - done
+- check nothing weird happens with the deps- done
+- `.env` should NOT go to git -done
+- keep `.env.example` because that one is ok -done
+- check gitignore ignores the example assignment + extra rules stuff -done
 
 ## start the api
 
