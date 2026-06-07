@@ -181,3 +181,19 @@ def test_ask_answers_swedish_median_direct_stats_question_without_llm() -> None:
         "answer": "Sales median is 20.",
         "model": "HuggingFaceTB/SmolLM2-360M-Instruct",
     }
+
+
+def test_ask_handles_medial_typo_as_median_without_llm() -> None:
+    client.post(
+        "/data/upload",
+        files={"file": ("sales.csv", b"Sales,Region\n10,North\n42.5,South\n20,West\n")},
+    )
+
+    response = client.post("/ai/ask", json={"question": "What is the medial sales value?"})
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "question": "What is the medial sales value?",
+        "answer": "Sales median is 20.",
+        "model": "HuggingFaceTB/SmolLM2-360M-Instruct",
+    }

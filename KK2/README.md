@@ -56,6 +56,12 @@ Despues inicia la API:
 uv run uvicorn app.main:app --reload
 ```
 
+Si quieres abrir una ventana de escritorio simple:
+
+```powershell
+uv run python start_ui.py
+```
+
 Tambien hay un archivo de atajo que pense que algunas personas podrian encontrar conveniente:
 
 ```text
@@ -203,6 +209,12 @@ Then start the API:
 
 ```powershell
 uv run uvicorn app.main:app --reload
+```
+
+If you want to open a simple desktop window:
+
+```powershell
+uv run python start_ui.py
 ```
 
 There is also a shortcut file that I thought some people might find convenient:

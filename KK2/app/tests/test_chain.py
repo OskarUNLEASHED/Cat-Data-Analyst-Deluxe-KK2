@@ -137,6 +137,15 @@ def test_direct_stats_answer_handles_swedish_median_question() -> None:
     assert answer == "Sales median is 25."
 
 
+def test_direct_stats_answer_handles_medial_typo_as_median() -> None:
+    answer = answer_direct_stats_question(
+        "What is the medial sales value?",
+        {"Sales": {"count": 3.0, "mean": 20.0, "50%": 25.0, "min": 10.0, "max": 42.5}},
+    )
+
+    assert answer == "Sales median is 25."
+
+
 def test_direct_stats_answer_ignores_questions_without_metric() -> None:
     answer = answer_direct_stats_question(
         "Which city is warmest?",

@@ -52,7 +52,7 @@ METRIC_ALIASES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ),
     (
         "50%",
-        ("median", "medianen", "middle", "midpoint"),
+        ("median", "medianen", "medial", "middle", "midpoint"),
     ),
     (
         "count",

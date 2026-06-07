@@ -23,59 +23,80 @@ from app.schemas import PromptBuilderInput
 class OrakletWindow:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
-        self.selected_file = tk.StringVar(value="No CSV selected.")
+        self.selected_file_path: Path | None = None
+        self.selected_file = tk.StringVar(value="No file selected")
+        self.dataset_status = tk.StringVar(value="Dataset: not uploaded")
+        self.health_status = tk.StringVar(value="Health: ?")
         self.status = tk.StringVar(value="Ready.")
+        self.is_busy = False
 
         self._build_window()
 
     def _build_window(self) -> None:
         self.root.title("KK2 Oraklet")
-        self.root.geometry("760x560")
-        self.root.minsize(620, 460)
+        self.root.geometry("820x620")
+        self.root.minsize(680, 520)
 
         frame = ttk.Frame(self.root, padding=14)
         frame.pack(fill=tk.BOTH, expand=True)
 
-        title = ttk.Label(frame, text="KK2 Oraklet", font=("Segoe UI", 18, "bold"))
+        header = ttk.Frame(frame)
+        header.pack(fill=tk.X)
+
+        title_block = ttk.Frame(header)
+        title_block.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        title = ttk.Label(title_block, text="KK2 Oraklet", font=("Segoe UI", 18, "bold"))
         title.pack(anchor=tk.W)
 
         subtitle = ttk.Label(
-            frame,
-            text="Upload a CSV, check stats, and ask questions without Swagger.",
+            title_block,
+            text="Desktop window for upload, stats, and questions.",
         )
-        subtitle.pack(anchor=tk.W, pady=(0, 14))
+        subtitle.pack(anchor=tk.W)
 
-        buttons = ttk.Frame(frame)
-        buttons.pack(fill=tk.X)
-
-        ttk.Button(buttons, text="Health", command=self.check_health).pack(side=tk.LEFT)
-        ttk.Button(buttons, text="Choose CSV", command=self.choose_file).pack(
-            side=tk.LEFT,
-            padx=(8, 0),
+        health = ttk.Frame(header)
+        health.pack(side=tk.RIGHT)
+        ttk.Label(health, textvariable=self.health_status, font=("Segoe UI", 11, "bold")).pack(
+            anchor=tk.E
         )
-        ttk.Button(buttons, text="Upload", command=self.upload_file).pack(
-            side=tk.LEFT,
-            padx=(8, 0),
+        ttk.Button(health, text="Check", command=self.check_health).pack(anchor=tk.E, pady=(5, 0))
+
+        csv_box = ttk.LabelFrame(frame, text="CSV", padding=10)
+        csv_box.pack(fill=tk.X, pady=(16, 10))
+
+        file_row = ttk.Frame(csv_box)
+        file_row.pack(fill=tk.X)
+
+        ttk.Button(file_row, text="Choose CSV", command=self.choose_file).pack(side=tk.LEFT)
+
+        ttk.Label(csv_box, text="Selected file:").pack(anchor=tk.W, pady=(10, 0))
+        ttk.Label(csv_box, textvariable=self.selected_file, font=("Segoe UI", 10, "bold")).pack(
+            anchor=tk.W
         )
-        ttk.Button(buttons, text="Stats", command=self.show_stats).pack(
-            side=tk.LEFT,
-            padx=(8, 0),
+        ttk.Label(csv_box, textvariable=self.dataset_status).pack(anchor=tk.W, pady=(6, 0))
+        ttk.Button(csv_box, text="Display stats", command=self.show_stats).pack(
+            anchor=tk.W,
+            pady=(10, 0),
         )
 
-        ttk.Label(frame, textvariable=self.selected_file).pack(anchor=tk.W, pady=(10, 10))
+        ask_box = ttk.LabelFrame(frame, text="Ask", padding=10)
+        ask_box.pack(fill=tk.X, pady=(0, 10))
 
-        ttk.Label(frame, text="Question").pack(anchor=tk.W)
-        self.question_box = tk.Text(frame, height=4, wrap=tk.WORD)
-        self.question_box.insert("1.0", "Vad ar hogsta sales value?")
+        ttk.Label(ask_box, text="Question").pack(anchor=tk.W)
+        self.question_box = tk.Text(ask_box, height=4, wrap=tk.WORD)
+        self.question_box.insert("1.0", "Choose and upload a CSV first.")
         self.question_box.pack(fill=tk.X)
 
-        ttk.Button(frame, text="Ask Oraklet", command=self.ask_question).pack(
+        ttk.Button(ask_box, text="Ask Oraklet", command=self.ask_question).pack(
             anchor=tk.W,
-            pady=(10, 12),
+            pady=(8, 0),
         )
 
-        ttk.Label(frame, text="Response").pack(anchor=tk.W)
-        self.response_box = scrolledtext.ScrolledText(frame, wrap=tk.WORD, height=14)
+        response_box = ttk.LabelFrame(frame, text="Output", padding=10)
+        response_box.pack(fill=tk.BOTH, expand=True)
+
+        self.response_box = scrolledtext.ScrolledText(response_box, wrap=tk.WORD, height=14)
         self.response_box.pack(fill=tk.BOTH, expand=True)
         self.response_box.insert(tk.END, "Nothing yet.")
 
@@ -83,6 +104,7 @@ class OrakletWindow:
 
     def check_health(self) -> None:
         self._show_result({"status": "ok"})
+        self.health_status.set("Health: ☺")
         self.status.set("API logic is available.")
 
     def choose_file(self) -> None:
@@ -91,16 +113,20 @@ class OrakletWindow:
             filetypes=(("CSV files", "*.csv"), ("All files", "*.*")),
         )
         if file_path:
-            self.selected_file.set(file_path)
+            self.selected_file_path = Path(file_path)
+            self.selected_file.set(
+                f"{self.selected_file_path.name} ({self.selected_file_path.parent})"
+            )
+            self.dataset_status.set("Dataset: selected, uploading...")
+            self.upload_file()
 
     def upload_file(self) -> None:
-        file_path = Path(self.selected_file.get())
-        if not file_path.exists():
+        if self.selected_file_path is None or not self.selected_file_path.exists():
             self._show_error("Choose a CSV first.")
             return
 
         def work() -> dict[str, Any]:
-            with file_path.open("rb") as file:
+            with self.selected_file_path.open("rb") as file:
                 metadata = load_csv(file)
             return metadata.model_dump()
 
@@ -147,20 +173,32 @@ class OrakletWindow:
         work: Callable[[], Any],
         done_status: str,
     ) -> None:
+        if self.is_busy:
+            self.status.set("Wait for the current task to finish.")
+            return
+
+        self.is_busy = True
         self.status.set(pending_status)
 
         def worker() -> None:
             try:
                 result = work()
             except (DatasetError, RuntimeError, ValueError) as exc:
-                self.root.after(0, lambda: self._show_error(str(exc)))
+                message = str(exc)
+                self.root.after(0, lambda: self._show_error(message))
             else:
                 self.root.after(0, lambda: self._finish(result, done_status))
 
         threading.Thread(target=worker, daemon=True).start()
 
     def _finish(self, result: Any, status: str) -> None:
+        self.is_busy = False
         self._show_result(result)
+        if status == "Dataset uploaded." and isinstance(result, dict):
+            rows = result.get("rows", "?")
+            columns = len(result.get("columns", []))
+            self.dataset_status.set(f"Dataset: uploaded ({rows} rows, {columns} columns)")
+            self._set_question_suggestion()
         self.status.set(status)
 
     def _show_result(self, result: Any) -> None:
@@ -173,8 +211,45 @@ class OrakletWindow:
         self.response_box.insert(tk.END, text)
 
     def _show_error(self, message: str) -> None:
+        self.is_busy = False
+        if message.startswith("Choose a CSV") or "CSV" in message:
+            self.dataset_status.set("Dataset: not ready")
+        if "SmolLM" in message or "model" in message.casefold():
+            self.health_status.set("Health: :(")
         self.status.set(f"Error: {message}")
         self._show_result({"error": message})
+
+    def _set_question_suggestion(self) -> None:
+        stats = get_stats()
+        if stats is None:
+            return
+
+        numeric_column = next(
+            (
+                column
+                for column, metrics in stats.items()
+                if metrics.get("mean") not in ("", None)
+            ),
+            None,
+        )
+
+        if numeric_column is not None:
+            question = f"What is the average {numeric_column} value?"
+        else:
+            text_column = next(
+                (
+                    column
+                    for column, metrics in stats.items()
+                    if metrics.get("top") not in ("", None)
+                ),
+                None,
+            )
+            if text_column is None:
+                return
+            question = f"What is the most common {text_column} value?"
+
+        self.question_box.delete("1.0", tk.END)
+        self.question_box.insert("1.0", question)
 
 
 def main() -> None:
