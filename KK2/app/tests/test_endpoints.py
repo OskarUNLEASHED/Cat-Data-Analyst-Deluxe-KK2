@@ -149,3 +149,35 @@ def test_ask_answers_direct_stats_question_without_llm() -> None:
         "answer": "Sales max is 42.50.",
         "model": "HuggingFaceTB/SmolLM2-360M-Instruct",
     }
+
+
+def test_ask_answers_swedish_direct_stats_question_without_llm() -> None:
+    client.post(
+        "/data/upload",
+        files={"file": ("sales.csv", b"Sales,Region\n10,North\n42.5,South\n")},
+    )
+
+    response = client.post("/ai/ask", json={"question": "Vad är högsta sales value?"})
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "question": "Vad är högsta sales value?",
+        "answer": "Sales max is 42.50.",
+        "model": "HuggingFaceTB/SmolLM2-360M-Instruct",
+    }
+
+
+def test_ask_answers_swedish_median_direct_stats_question_without_llm() -> None:
+    client.post(
+        "/data/upload",
+        files={"file": ("sales.csv", b"Sales,Region\n10,North\n42.5,South\n20,West\n")},
+    )
+
+    response = client.post("/ai/ask", json={"question": "Vad är median sale value?"})
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "question": "Vad är median sale value?",
+        "answer": "Sales median is 20.",
+        "model": "HuggingFaceTB/SmolLM2-360M-Instruct",
+    }

@@ -5,13 +5,66 @@ from typing import Any
 
 
 METRIC_ALIASES: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("max", ("highest", "largest", "maximum", "max", "biggest")),
-    ("min", ("lowest", "smallest", "minimum", "min")),
-    ("mean", ("average", "mean")),
-    ("count", ("count", "number of", "how many")),
-    ("top", ("most common", "top", "mode")),
-    ("freq", ("frequency", "freq")),
+    (
+        "max",
+        (
+            "highest",
+            "largest",
+            "maximum",
+            "max",
+            "biggest",
+            "hogsta",
+            "högsta",
+            "hogst",
+            "högst",
+            "storsta",
+            "största",
+            "storst",
+            "störst",
+        ),
+    ),
+    (
+        "min",
+        (
+            "lowest",
+            "smallest",
+            "minimum",
+            "min",
+            "lagsta",
+            "lägsta",
+            "lagst",
+            "lägst",
+            "minsta",
+            "minst",
+        ),
+    ),
+    (
+        "mean",
+        (
+            "average",
+            "mean",
+            "medel",
+            "medelvarde",
+            "medelvärde",
+            "genomsnitt",
+            "snitt",
+        ),
+    ),
+    (
+        "50%",
+        ("median", "medianen", "middle", "midpoint"),
+    ),
+    (
+        "count",
+        ("count", "number of", "how many", "antal", "hur manga", "hur många"),
+    ),
+    ("top", ("most common", "top", "mode", "vanligaste", "mest vanlig")),
+    ("freq", ("frequency", "freq", "frekvens")),
 )
+
+METRIC_LABELS = {
+    "50%": "median",
+}
 
 
 def answer_direct_stats_question(
@@ -34,7 +87,8 @@ def answer_direct_stats_question(
     if value == "" or value is None:
         return f"The uploaded stats do not contain {metric} for {column}."
 
-    return f"{column} {metric} is {_format_value(value)}."
+    metric_label = METRIC_LABELS.get(metric, metric)
+    return f"{column} {metric_label} is {_format_value(value)}."
 
 
 def _find_requested_metric(question: str) -> str | None:
@@ -47,7 +101,8 @@ def _find_requested_metric(question: str) -> str | None:
 
 
 def _asks_for_row_or_category(question: str) -> bool:
-    return question.strip().casefold().startswith(("which ", "who ", "where "))
+    normalized_question = _normalize(question)
+    return normalized_question.startswith(("which ", "who ", "where ", "vilken ", "vilket ", "vem ", "var "))
 
 
 def _find_single_requested_column(

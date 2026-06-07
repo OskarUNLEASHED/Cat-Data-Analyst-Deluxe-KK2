@@ -119,6 +119,24 @@ def test_direct_stats_answer_handles_singular_question_for_plural_column() -> No
     assert answer == "Sales max is 42.50."
 
 
+def test_direct_stats_answer_handles_swedish_highest_question() -> None:
+    answer = answer_direct_stats_question(
+        "Vad är högsta sales value?",
+        {"Sales": {"count": 3.0, "mean": 20.0, "min": 10.0, "max": 42.5}},
+    )
+
+    assert answer == "Sales max is 42.50."
+
+
+def test_direct_stats_answer_handles_swedish_median_question() -> None:
+    answer = answer_direct_stats_question(
+        "Vad är median sale value?",
+        {"Sales": {"count": 3.0, "mean": 20.0, "50%": 25.0, "min": 10.0, "max": 42.5}},
+    )
+
+    assert answer == "Sales median is 25."
+
+
 def test_direct_stats_answer_ignores_questions_without_metric() -> None:
     answer = answer_direct_stats_question(
         "Which city is warmest?",
@@ -131,6 +149,15 @@ def test_direct_stats_answer_ignores_questions_without_metric() -> None:
 def test_direct_stats_answer_ignores_row_lookup_questions() -> None:
     answer = answer_direct_stats_question(
         "Which Region has the highest Sales value?",
+        {"Region": {"top": "South", "freq": 1}, "Sales": {"max": 42.5}},
+    )
+
+    assert answer is None
+
+
+def test_direct_stats_answer_ignores_swedish_row_lookup_questions() -> None:
+    answer = answer_direct_stats_question(
+        "Vilken region har högsta Sales value?",
         {"Region": {"top": "South", "freq": 1}, "Sales": {"max": 42.5}},
     )
 

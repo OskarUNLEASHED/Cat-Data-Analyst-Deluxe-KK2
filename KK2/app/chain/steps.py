@@ -35,6 +35,7 @@ Answer in max 2 short lines.
 
 Rules:
 - average = mean
+- median = 50%
 - highest/largest = max
 - lowest/smallest = min
 - always mention column name and metric name
@@ -66,7 +67,7 @@ ANSWER:
 
     @staticmethod
     def _useful_metric_parts(metrics: dict[str, Any]) -> list[str]:
-        preferred_metrics = ("count", "mean", "min", "max", "top", "freq")
+        preferred_metrics = ("count", "mean", "50%", "min", "max", "top", "freq")
         parts: list[str] = []
 
         for metric in preferred_metrics:
