@@ -54,7 +54,7 @@ Then start the API:
 uv run uvicorn app.main:app --reload
 ```
 
-If you want to open a simple desktop window:
+PLEASE, use the desktop window. It has all the cats:
 
 ```powershell
 uv run ui
