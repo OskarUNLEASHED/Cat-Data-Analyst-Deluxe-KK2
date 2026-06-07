@@ -1,5 +1,7 @@
 import time
 
+import pytest
+
 from app.chain.direct_stats import answer_direct_stats_question
 from app.chain.pipeline import build_oraklet_chain
 from app.chain.steps import LLMRunner, PromptBuilder, ResponseParser
@@ -40,12 +42,8 @@ def test_llm_runner_rejects_empty_model_output() -> None:
 
     runner = LLMRunner(generator=fake_generator)
 
-    try:
+    with pytest.raises(ValueError, match="The model returned an empty answer."):
         runner.invoke(PromptBuilderOutput(prompt="Prompt text\nSvar:"))
-    except ValueError as exc:
-        assert str(exc) == "The model returned an empty answer."
-    else:
-        raise AssertionError("Expected ValueError for empty model output.")
 
 
 def test_llm_runner_rejects_slow_model_output(monkeypatch) -> None:
@@ -57,12 +55,8 @@ def test_llm_runner_rejects_slow_model_output(monkeypatch) -> None:
 
     runner = LLMRunner(generator=slow_generator)
 
-    try:
+    with pytest.raises(RuntimeError, match="longer than 0.01 seconds"):
         runner.invoke(PromptBuilderOutput(prompt="Prompt text\nSvar:"))
-    except RuntimeError as exc:
-        assert "longer than 0.01 seconds" in str(exc)
-    else:
-        raise AssertionError("Expected RuntimeError for slow model output.")
 
 
 def test_response_parser_strips_prompt_echo() -> None:
@@ -76,12 +70,8 @@ def test_response_parser_strips_prompt_echo() -> None:
 def test_response_parser_rejects_repetitive_answer() -> None:
     runner_output = LLMRunnerOutput(raw_text="Svar:\nSvergar Svergar Svergar Svergar Svergar Svergar Svergar Svergar")
 
-    try:
+    with pytest.raises(ValueError, match="The model returned a repetitive answer."):
         ResponseParser().invoke(runner_output)
-    except ValueError as exc:
-        assert str(exc) == "The model returned a repetitive answer."
-    else:
-        raise AssertionError("Expected ValueError for repetitive model output.")
 
 
 def test_full_chain_uses_pipe_operator() -> None:
@@ -101,45 +91,33 @@ def test_full_chain_uses_pipe_operator() -> None:
     assert result.answer == "Chain answer"
 
 
-def test_direct_stats_answer_handles_highest_named_column() -> None:
+@pytest.mark.parametrize(
+    ("question", "expected"),
+    [
+        ("What is the highest Sales value?", "Sales max is 42.50."),
+        ("What is the highest sale value?", "Sales max is 42.50."),
+        ("Vad är högsta sales value?", "Sales max is 42.50."),
+    ],
+)
+def test_direct_stats_answer_handles_max_aliases(question: str, expected: str) -> None:
     answer = answer_direct_stats_question(
-        "What is the highest Sales value?",
+        question,
         {"Sales": {"count": 3.0, "mean": 20.0, "min": 10.0, "max": 42.5}},
     )
 
-    assert answer == "Sales max is 42.50."
+    assert answer == expected
 
 
-def test_direct_stats_answer_handles_singular_question_for_plural_column() -> None:
-    answer = answer_direct_stats_question(
-        "What is the highest sale value?",
-        {"Sales": {"count": 3.0, "mean": 20.0, "min": 10.0, "max": 42.5}},
-    )
-
-    assert answer == "Sales max is 42.50."
-
-
-def test_direct_stats_answer_handles_swedish_highest_question() -> None:
-    answer = answer_direct_stats_question(
-        "Vad är högsta sales value?",
-        {"Sales": {"count": 3.0, "mean": 20.0, "min": 10.0, "max": 42.5}},
-    )
-
-    assert answer == "Sales max is 42.50."
-
-
-def test_direct_stats_answer_handles_swedish_median_question() -> None:
-    answer = answer_direct_stats_question(
+@pytest.mark.parametrize(
+    "question",
+    [
         "Vad är median sale value?",
-        {"Sales": {"count": 3.0, "mean": 20.0, "50%": 25.0, "min": 10.0, "max": 42.5}},
-    )
-
-    assert answer == "Sales median is 25."
-
-
-def test_direct_stats_answer_handles_medial_typo_as_median() -> None:
-    answer = answer_direct_stats_question(
         "What is the medial sales value?",
+    ],
+)
+def test_direct_stats_answer_handles_median_aliases(question: str) -> None:
+    answer = answer_direct_stats_question(
+        question,
         {"Sales": {"count": 3.0, "mean": 20.0, "50%": 25.0, "min": 10.0, "max": 42.5}},
     )
 
@@ -155,18 +133,16 @@ def test_direct_stats_answer_ignores_questions_without_metric() -> None:
     assert answer is None
 
 
-def test_direct_stats_answer_ignores_row_lookup_questions() -> None:
-    answer = answer_direct_stats_question(
+@pytest.mark.parametrize(
+    "question",
+    [
         "Which Region has the highest Sales value?",
-        {"Region": {"top": "South", "freq": 1}, "Sales": {"max": 42.5}},
-    )
-
-    assert answer is None
-
-
-def test_direct_stats_answer_ignores_swedish_row_lookup_questions() -> None:
-    answer = answer_direct_stats_question(
         "Vilken region har högsta Sales value?",
+    ],
+)
+def test_direct_stats_answer_ignores_row_lookup_questions(question: str) -> None:
+    answer = answer_direct_stats_question(
+        question,
         {"Region": {"top": "South", "freq": 1}, "Sales": {"max": 42.5}},
     )
 

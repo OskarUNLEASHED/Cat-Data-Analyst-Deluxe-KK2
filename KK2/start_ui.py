@@ -27,6 +27,7 @@ HEALTH_OK_PATH = IMAGE_DIR / "HealthOK.png"
 HEALTH_NOT_OK_PATH = IMAGE_DIR / "HealthNOTOk.png"
 CAT_THINKING_PATH = IMAGE_DIR / "CatThinking.png"
 CAT_RESPONSE_PATH = IMAGE_DIR / "CatResponse.png"
+SAMPLE_CSV_PATH = Path(__file__).parent / "CSV" / "SuperMarket Data.csv"
 
 
 class CatDataAnalystWindow:
@@ -40,6 +41,9 @@ class CatDataAnalystWindow:
         self.status_panel_text = tk.StringVar(value="Status: idle")
         self.status = tk.StringVar(value="Ready.")
         self.is_busy = False
+        self.loading_frames = ("◐", "◓", "◑", "◒")
+        self.loading_frame_index = 0
+        self.loading_after_id: str | None = None
 
         self._build_window()
 
@@ -63,7 +67,7 @@ class CatDataAnalystWindow:
 
         subtitle = ttk.Label(
             title_block,
-            text="Desktop window for upload, stats, and questions.",
+            text="This cat works for free. He does not have a degree as a data analyst.",
         )
         subtitle.pack(anchor=tk.W)
 
@@ -77,6 +81,10 @@ class CatDataAnalystWindow:
         file_row.pack(fill=tk.X)
 
         ttk.Button(file_row, text="Choose CSV", command=self.choose_file).pack(side=tk.LEFT)
+        ttk.Button(file_row, text="Sample CSV", command=self.choose_sample_csv).pack(
+            side=tk.LEFT,
+            padx=(8, 0),
+        )
 
         ttk.Label(csv_box, text="Selected file:").pack(anchor=tk.W, pady=(10, 0))
         ttk.Label(csv_box, textvariable=self.selected_file, font=("Segoe UI", 10, "bold")).pack(
@@ -134,12 +142,20 @@ class CatDataAnalystWindow:
             filetypes=(("CSV files", "*.csv"), ("All files", "*.*")),
         )
         if file_path:
-            self.selected_file_path = Path(file_path)
-            self.selected_file.set(
-                f"{self.selected_file_path.name} ({self.selected_file_path.parent})"
-            )
-            self.dataset_status.set("Dataset: selected, uploading...")
-            self.upload_file()
+            self._select_csv(Path(file_path))
+
+    def choose_sample_csv(self) -> None:
+        if not SAMPLE_CSV_PATH.exists():
+            self._show_error(f"Sample CSV was not found: {SAMPLE_CSV_PATH}")
+            return
+
+        self._select_csv(SAMPLE_CSV_PATH)
+
+    def _select_csv(self, file_path: Path) -> None:
+        self.selected_file_path = file_path
+        self.selected_file.set(f"{file_path.name} ({file_path.parent})")
+        self.dataset_status.set("Dataset: selected, uploading...")
+        self.upload_file()
 
     def upload_file(self) -> None:
         if self.selected_file_path is None or not self.selected_file_path.exists():
@@ -252,7 +268,7 @@ class CatDataAnalystWindow:
         self.is_busy = True
         self.status.set(pending_status)
         if pending_status == "Asking analyst...":
-            self._set_status_panel("Cat is thinking", "thinking")
+            self._start_loading_status()
 
         def worker() -> None:
             try:
@@ -267,6 +283,7 @@ class CatDataAnalystWindow:
 
     def _finish(self, result: Any, status: str) -> None:
         self.is_busy = False
+        self._stop_loading_status()
         self._show_result(result)
         if status == "Answer ready.":
             self._set_status_panel("Cat answered", "response")
@@ -290,6 +307,7 @@ class CatDataAnalystWindow:
 
     def _show_error(self, message: str) -> None:
         self.is_busy = False
+        self._stop_loading_status()
         if message.startswith("Choose a CSV") or "CSV" in message:
             self.dataset_status.set("Dataset: not ready")
         if "SmolLM" in message or "model" in message.casefold():
@@ -328,6 +346,27 @@ class CatDataAnalystWindow:
 
         self.question_box.delete("1.0", tk.END)
         self.question_box.insert("1.0", question)
+
+    def _start_loading_status(self) -> None:
+        self.loading_frame_index = 0
+        self._set_status_panel("Cat is thinking", "thinking")
+        self._animate_loading_status()
+
+    def _animate_loading_status(self) -> None:
+        if not self.is_busy:
+            return
+
+        frame = self.loading_frames[self.loading_frame_index]
+        self.loading_frame_index = (self.loading_frame_index + 1) % len(self.loading_frames)
+        self.status_panel_text.set(f"Cat is thinking {frame}")
+        self.loading_after_id = self.root.after(180, self._animate_loading_status)
+
+    def _stop_loading_status(self) -> None:
+        if self.loading_after_id is None:
+            return
+
+        self.root.after_cancel(self.loading_after_id)
+        self.loading_after_id = None
 
 
 def main() -> None:
