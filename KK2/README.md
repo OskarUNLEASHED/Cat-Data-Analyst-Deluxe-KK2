@@ -1,4 +1,6 @@
-# KK2 - Oraklet
+# Cat Data Analyst Deluxe
+
+KK2-projekt byggt för uppgiften Oraklet.
 
 Si no tienes ganas de mirar datos e interpretarlos, y tampoco quieres pagar tokens caros,
 entonces llegaste al lugar correcto.

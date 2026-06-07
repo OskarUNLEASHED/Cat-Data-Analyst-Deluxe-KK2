@@ -1,1 +1,1 @@
-"""KK2 Oraklet application package."""
+"""Cat Data Analyst Deluxe application package."""

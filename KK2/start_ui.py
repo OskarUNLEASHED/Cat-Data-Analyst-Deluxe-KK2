@@ -1,4 +1,4 @@
-"""Open a small desktop window for Oraklet.
+"""Open a small desktop window for Cat Data Analyst Deluxe.
 
 Terminal command:
     uv run python start_ui.py
@@ -20,9 +20,14 @@ from app.data import DatasetError, get_stats, load_csv
 from app.schemas import PromptBuilderInput
 
 
-class OrakletWindow:
+PROJECT_NAME = "Cat Data Analyst Deluxe"
+LOGO_PATH = Path(__file__).parent / "images" / "Logo.png"
+
+
+class CatDataAnalystWindow:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
+        self.logo_image: tk.PhotoImage | None = None
         self.selected_file_path: Path | None = None
         self.selected_file = tk.StringVar(value="No file selected")
         self.dataset_status = tk.StringVar(value="Dataset: not uploaded")
@@ -33,9 +38,10 @@ class OrakletWindow:
         self._build_window()
 
     def _build_window(self) -> None:
-        self.root.title("KK2 Oraklet")
+        self.root.title(PROJECT_NAME)
         self.root.geometry("820x620")
         self.root.minsize(680, 520)
+        self._set_window_icon()
 
         frame = ttk.Frame(self.root, padding=14)
         frame.pack(fill=tk.BOTH, expand=True)
@@ -46,7 +52,7 @@ class OrakletWindow:
         title_block = ttk.Frame(header)
         title_block.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-        title = ttk.Label(title_block, text="KK2 Oraklet", font=("Segoe UI", 18, "bold"))
+        title = ttk.Label(title_block, text=PROJECT_NAME, font=("Segoe UI", 18, "bold"))
         title.pack(anchor=tk.W)
 
         subtitle = ttk.Label(
@@ -75,7 +81,7 @@ class OrakletWindow:
             anchor=tk.W
         )
         ttk.Label(csv_box, textvariable=self.dataset_status).pack(anchor=tk.W, pady=(6, 0))
-        ttk.Button(csv_box, text="Display stats", command=self.show_stats).pack(
+        ttk.Button(csv_box, text="Display data", command=self.show_stats).pack(
             anchor=tk.W,
             pady=(10, 0),
         )
@@ -88,7 +94,7 @@ class OrakletWindow:
         self.question_box.insert("1.0", "Choose and upload a CSV first.")
         self.question_box.pack(fill=tk.X)
 
-        ttk.Button(ask_box, text="Ask Oraklet", command=self.ask_question).pack(
+        ttk.Button(ask_box, text="Ask analyst", command=self.ask_question).pack(
             anchor=tk.W,
             pady=(8, 0),
         )
@@ -105,7 +111,7 @@ class OrakletWindow:
     def check_health(self) -> None:
         self._show_result({"status": "ok"})
         self.health_status.set("Health: ☺")
-        self.status.set("API logic is available.")
+        self.status.set("App logic is available.")
 
     def choose_file(self) -> None:
         file_path = filedialog.askopenfilename(
@@ -165,7 +171,17 @@ class OrakletWindow:
                 "model": MODEL_NAME,
             }
 
-        self._run("Asking Oraklet...", work, "Answer ready.")
+        self._run("Asking analyst...", work, "Answer ready.")
+
+    def _set_window_icon(self) -> None:
+        if not LOGO_PATH.exists():
+            return
+
+        try:
+            self.logo_image = tk.PhotoImage(file=LOGO_PATH)
+            self.root.iconphoto(True, self.logo_image)
+        except tk.TclError:
+            self.logo_image = None
 
     def _run(
         self,
@@ -254,7 +270,7 @@ class OrakletWindow:
 
 def main() -> None:
     root = tk.Tk()
-    OrakletWindow(root)
+    CatDataAnalystWindow(root)
     root.mainloop()
 
 

@@ -22,12 +22,12 @@ TextGenerator = Callable[..., list[dict[str, Any]]]
 
 
 class PromptBuilder(Runnable[PromptBuilderInput, PromptBuilderOutput]):
-    """Builds the instruction prompt that is sent to Oraklet."""
+    """Builds the instruction prompt that is sent to the data analyst model."""
 
     def invoke(self, input_data: PromptBuilderInput) -> PromptBuilderOutput:
         stats_text = self._format_stats(input_data.stats)
         prompt = f"""
-You are Oraklet, a careful data assistant.
+You are Cat Data Analyst Deluxe, a careful data assistant.
 Use ONLY the values in STATS.
 Do not calculate new numbers.
 For direct numeric questions, answer with the exact metric from STATS.

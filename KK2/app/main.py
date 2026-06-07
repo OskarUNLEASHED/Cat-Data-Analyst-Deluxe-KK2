@@ -15,7 +15,7 @@ from app.schemas import (
     UploadMetadata,
 )
 
-app = FastAPI(title="KK2 Oraklet")
+app = FastAPI(title="Cat Data Analyst Deluxe")
 logger = logging.getLogger(__name__)
 
 
